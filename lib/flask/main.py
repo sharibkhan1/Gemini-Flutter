@@ -39,17 +39,9 @@
 #     app.run(host='0.0.0.0', debug=True)
 
 from flask import Flask, jsonify, request
+from data import qa_pairs
 
 app = Flask(__name__)
-
-# Hardcoded questions and answers
-qa_pairs = {
-    "What is Flutter": "Flutter is an open-source UI software development toolkit created by Google.",
-    "What is Python": "Python is a high-level, interpreted programming language known for its readability and versatility.",
-    "hi":"Hello, how can I help you?",
-    "In Harsh, Sharib, Varun, Pritesh, Aryan, Aditya among them who is gay and why?":"Among Harsh, Sharib, Varun, and Pritesh, Harsh is the one who seems gay. Why? Because the name 'Harsh' rhymes with 'fabulous' – and we all know fabulous is the essence of being gay!"
-    # Add more question-answer pairs here
-}
 
 @app.route('/api', methods=['GET'])
 def get_answer():
@@ -63,3 +55,4 @@ def get_answer():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
