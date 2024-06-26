@@ -47,7 +47,7 @@ class ChatProvider extends ChangeNotifier {
     _isTyping = true;
     notifyListeners();
 
-    final response = await http.get(Uri.parse('http://192.168.0.105:5000/api?Query=$message'));
+    final response = await http.get(Uri.parse('http://192.168.0.106:5000/api?Query=$message'));
     final responseData = json.decode(response.body);
 
     _prompt.add(ModelMessage(
