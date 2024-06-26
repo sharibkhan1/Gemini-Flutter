@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:gemini/message_model.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class ChatProvider extends ChangeNotifier {
   bool _isDarkMode = false;
@@ -47,14 +47,34 @@ class ChatProvider extends ChangeNotifier {
     _isTyping = true;
     notifyListeners();
 
-    final response = await http.get(Uri.parse('http://192.168.0.105:5000/api?Query=$message'));
-    final responseData = json.decode(response.body);
+    String ngrokUrl = "https://f243-34-148-183-75.ngrok-free.app/generate";
+    Map<String, dynamic> query = {
+      'query': message,
+    };
 
-    _prompt.add(ModelMessage(
+    final response = await http.post(
+      Uri.parse(ngrokUrl),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(query),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      _prompt.add(ModelMessage(
         isPrompt: false,
         message: responseData['Answer'],
-        time: DateTime.now()
-    ));
+        time: DateTime.now(),
+      ));
+    } else {
+      _prompt.add(ModelMessage(
+        isPrompt: false,
+        message: 'Failed to get response from server',
+        time: DateTime.now(),
+      ));
+    }
+
     _isTyping = false;
     notifyListeners();
   }
