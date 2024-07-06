@@ -1,11 +1,12 @@
-class ModelMessage{
-  final bool isPrompt;
-  final String message;
-  final DateTime  time;
 
-  ModelMessage({
-    required this.isPrompt,
-    required this.message,
-    required this.time,
-});
+import 'package:gemini/message_model.dart';
+
+class Chat {
+  final String title;
+  final List<ModelMessage> messages;
+
+  Chat({
+    required this.title,
+    required this.messages,
+  });
 }

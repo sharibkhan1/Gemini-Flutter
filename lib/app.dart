@@ -3,6 +3,7 @@
 // import 'package:flutter/widgets.dart';
 // import 'package:flutter_spinkit/flutter_spinkit.dart';
 // import 'package:flutter_svg/flutter_svg.dart';
+// import 'package:gemini/message_model.dart';
 // import 'package:gemini/model.dart';
 // import 'package:google_generative_ai/google_generative_ai.dart';
 // import 'package:intl/intl.dart';

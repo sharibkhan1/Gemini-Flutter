@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         builder: (context, chatProvider, child) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            theme: chatProvider.isDarkMode ? ThemeData.dark() : ThemeData.light(),
+            theme: chatProvider.isDarkMode ? ThemeData.light() : ThemeData.dark(),
             home: ChatScreen(),
           );
         },
