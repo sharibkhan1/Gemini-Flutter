@@ -1,53 +1,49 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:gemini/message_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:gemini/message_model.dart';
 
 class ChatProvider extends ChangeNotifier {
-  // Member variables
-  bool _isDarkMode = false; // Indicates current theme mode
-  bool _isTyping = false; // Indicates if user is typing
-  bool _showScrollToBottomButton = false; // Controls visibility of scroll to bottom button
-  List<ModelMessage> _prompt = []; // List of messages in the chat
-  List<String> _chatTitles = []; // Titles of saved chats
-  int _currentChatIndex = 0; // Index of the currently selected chat
-  final ScrollController _scrollController = ScrollController(); // Controller for scrolling chat view
+  bool _isDarkMode = false;
+  bool _isTyping = false;
+  bool _showScrollToBottomButton = false;
+  List<ModelMessage> _prompt = [];
+  List<String> _chatTitles = [];
+  int _currentChatIndex = 0;
+  final ScrollController _scrollController = ScrollController();
 
-  // Constructor
   ChatProvider() {
-    _scrollController.addListener(_scrollListener); // Initialize scroll listener
-    _loadChatTitles(); // Load chat titles from SharedPreferences
+    _scrollController.addListener(_scrollListener);
+    _loadChatTitles();
     if (_currentChatIndex != -1) {
-      _loadMessages(_currentChatIndex); // Load messages if a chat is selected
+      _loadMessages(_currentChatIndex);
     }
   }
 
-  // Getters
-  bool get isDarkMode => _isDarkMode; // Getter for dark mode status
-  bool get isTyping => _isTyping; // Getter for typing status
-  bool get showScrollToBottomButton => _showScrollToBottomButton; // Getter for scroll to bottom button visibility
-  List<ModelMessage> get prompt => _prompt; // Getter for messages list
-  List<String> get chatTitles => _chatTitles; // Getter for chat titles
-  int get currentChatIndex => _currentChatIndex; // Getter for current chat index
-  ScrollController get scrollController => _scrollController; // Getter for scroll controller
+  bool get isDarkMode => _isDarkMode;
+  bool get isTyping => _isTyping;
+  bool get showScrollToBottomButton => _showScrollToBottomButton;
+  List<ModelMessage> get prompt => _prompt;
+  List<String> get chatTitles => _chatTitles;
+  int get currentChatIndex => _currentChatIndex;
+  ScrollController get scrollController => _scrollController;
 
-  // Methods to load and save chat titles
   Future<void> _loadChatTitles() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _chatTitles = prefs.getStringList('chatTitles') ?? []; // Load chat titles from SharedPreferences
+    _chatTitles = prefs.getStringList('chatTitles') ?? [];
     notifyListeners();
   }
 
   Future<void> _saveChatTitles() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('chatTitles', _chatTitles); // Save chat titles to SharedPreferences
+    await prefs.setStringList('chatTitles', _chatTitles);
   }
 
-  // Methods to load and save messages for a chat
   Future<void> _saveMessages(int chatIndex) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> messagesJson = _prompt.map((msg) => jsonEncode(msg.toMap())).toList();
-    await prefs.setStringList('chatMessages_$chatIndex', messagesJson); // Save messages to SharedPreferences
+    await prefs.setStringList('chatMessages_$chatIndex', messagesJson);
   }
 
   Future<void> _loadMessages(int chatIndex) async {
@@ -56,54 +52,48 @@ class ChatProvider extends ChangeNotifier {
     if (messagesJson != null) {
       _prompt = messagesJson.map((msgJson) => ModelMessage.fromMap(jsonDecode(msgJson))).toList();
     } else {
-      _prompt.clear(); // Clear messages if none found for the chatIndex
+      _prompt.clear();
     }
     notifyListeners();
   }
 
-  // Listener for scroll controller to show/hide scroll to bottom button
   void _scrollListener() {
     if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-      _showScrollToBottomButton = false; // Hide button when scrolled to bottom
+      _showScrollToBottomButton = false;
     } else {
-      _showScrollToBottomButton = true; // Show button otherwise
+      _showScrollToBottomButton = true;
     }
     notifyListeners();
   }
 
-  // Method to add a new chat title
   void addChatTitle(String title) {
-    _chatTitles.add(title); // Add new chat title
-    _saveChatTitles(); // Save updated chat titles
+    _chatTitles.add(title);
+    _saveChatTitles();
     notifyListeners();
   }
 
-  // Method to remove a chat title by index
   void removeChatTitle(int index) async {
     if (index >= 0 && index < _chatTitles.length) {
-      _chatTitles.removeAt(index); // Remove chat title at given index
-      await _deleteMessages(index); // Delete messages associated with this chat title
-      _saveChatTitles(); // Save updated chat titles
+      _chatTitles.removeAt(index);
+      await _deleteMessages(index);
+      _saveChatTitles();
 
-      // Adjust currentChatIndex and load messages for the new current chat
       if (_chatTitles.isEmpty) {
         _currentChatIndex = -1;
         _prompt.clear();
       } else if (_currentChatIndex >= _chatTitles.length) {
         _currentChatIndex = _chatTitles.length - 1;
       }
-      _loadMessages(_currentChatIndex); // Load messages for the new current chat index
+      _loadMessages(_currentChatIndex);
       notifyListeners();
     }
   }
 
-  // Method to delete messages associated with a chat title index
   Future<void> _deleteMessages(int chatIndex) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('chatMessages_$chatIndex'); // Remove messages from SharedPreferences
-    _prompt.clear(); // Clear messages list in memory
+    await prefs.remove('chatMessages_$chatIndex');
+    _prompt.clear();
 
-    // Shift messages associated with indices greater than chatIndex
     for (int i = chatIndex + 1; i <= _chatTitles.length; i++) {
       List<String>? messagesJson = prefs.getStringList('chatMessages_$i');
       if (messagesJson != null) {
@@ -113,29 +103,25 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  // Method to rename a chat title
   void renameChatTitle(int index, String newTitle) {
     if (index >= 0 && index < _chatTitles.length && newTitle.length <= 12) {
-      _chatTitles[index] = newTitle; // Update chat title at given index
-      _saveChatTitles(); // Save updated chat titles
+      _chatTitles[index] = newTitle;
+      _saveChatTitles();
       notifyListeners();
     }
   }
 
-  // Method to set the current chat index and load messages for the selected chat
   void setCurrentChatIndex(int index) {
-    _currentChatIndex = index; // Set current chat index
-    _loadMessages(_currentChatIndex); // Load messages for the selected chat
+    _currentChatIndex = index;
+    _loadMessages(_currentChatIndex);
     notifyListeners();
   }
 
-  // Method to toggle between light and dark themes
   void toggleTheme() {
-    _isDarkMode = !_isDarkMode; // Toggle dark mode
+    _isDarkMode = !_isDarkMode;
     notifyListeners();
   }
 
-  // Method to scroll to the bottom of the chat
   void scrollToBottom() {
     _scrollController.animateTo(
       _scrollController.position.maxScrollExtent,
@@ -144,32 +130,61 @@ class ChatProvider extends ChangeNotifier {
     );
   }
 
-  // Method to simulate sending a message and receiving a response
   Future<void> sendMessage(String message) async {
-    _prompt.add(ModelMessage(isPrompt: true, message: message, time: DateTime.now())); // Add user message to prompt
-    _saveMessages(_currentChatIndex); // Save messages after adding the new one
-    _isTyping = true; // Set typing status
+    _prompt.add(ModelMessage(isPrompt: true, message: message, time: DateTime.now()));
+    _saveMessages(_currentChatIndex);
+    _isTyping = true;
     notifyListeners();
 
-    // Simulate API call or any asynchronous operation
-    await Future.delayed(Duration(seconds: 1));
+    String ngrokUrl = "https://a148-35-240-157-197.ngrok-free.app/generate";
+    Map<String, dynamic> query = {'query': message};
 
-    // Example response handling
-    _prompt.add(ModelMessage(
-      isPrompt: false,
-      message: 'Server Error', // Replace with actual response handling
-      time: DateTime.now(),
-    ));
+    try {
+      final response = await http.post(
+        Uri.parse(ngrokUrl),
+        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode(query),
+      );
 
-    _isTyping = false; // Clear typing status
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData != null && responseData['result'] != null) {
+          _prompt.add(ModelMessage(
+            isPrompt: false,
+            message: responseData['result'],
+            time: DateTime.now(),
+          ));
+        } else {
+          _prompt.add(ModelMessage(
+            isPrompt: false,
+            message: 'Received unexpected response from server',
+            time: DateTime.now(),
+          ));
+        }
+      } else {
+        _prompt.add(ModelMessage(
+          isPrompt: false,
+          message: 'Failed to get response from server',
+          time: DateTime.now(),
+        ));
+      }
+    } catch (error) {
+      _prompt.add(ModelMessage(
+        isPrompt: false,
+        message: 'An error occurred: $error',
+        time: DateTime.now(),
+      ));
+    }
+
+    _isTyping = false;
     notifyListeners();
-    _saveMessages(_currentChatIndex); // Save messages after receiving the response
+    _saveMessages(_currentChatIndex);
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_scrollListener); // Remove scroll listener
-    _scrollController.dispose(); // Dispose of scroll controller
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
     super.dispose();
   }
 }
